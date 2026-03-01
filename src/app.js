@@ -20,4 +20,8 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
+// Global error handling middleware - must be registered last
+const errorHandler = require('./middlewares/errorHandler');
+app.use(errorHandler);
+
 module.exports = app;
