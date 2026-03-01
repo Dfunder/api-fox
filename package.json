@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint src/",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js"
   },
@@ -30,6 +31,9 @@
     "morgan": "^1.10.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.3",
+    "eslint": "^9.39.3",
+    "globals": "^17.4.0",
     "nodemon": "^3.1.14"
   }
 }
