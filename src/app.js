@@ -1,7 +1,7 @@
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const morgan = require("morgan");
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
 
 const app = express();
 
@@ -14,10 +14,10 @@ app.use(cors({
   allowedHeaders: ['Authorization', 'Content-Type']
 }));
 app.use(helmet());
-app.use(morgan("dev"));
+app.use(morgan('dev'));
 
-app.get("/api/health", (req, res) => {
-  res.status(200).json({ status: "ok" });
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
 });
 
 // Global error handling middleware - must be registered last
