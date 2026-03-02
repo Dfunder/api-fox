@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1772378688879" clover="3.2.0">
-  <project timestamp="1772378688879" name="All files">
-    <metrics statements="39" coveredstatements="13" conditionals="4" coveredconditionals="2" methods="9" coveredmethods="1" elements="52" coveredelements="16" complexity="0" loc="39" ncloc="39" packages="4" files="4" classes="4"/>
+<coverage generated="1772441804740" clover="3.2.0">
+  <project timestamp="1772441804740" name="All files">
+    <metrics statements="53" coveredstatements="13" conditionals="6" coveredconditionals="2" methods="11" coveredmethods="1" elements="70" coveredelements="16" complexity="0" loc="53" ncloc="53" packages="5" files="5" classes="5"/>
     <package name="src">
       <metrics statements="13" coveredstatements="13" conditionals="2" coveredconditionals="2" methods="2" coveredmethods="1"/>
-      <file name="app.js" path="C:\Users\a-abdulkareem\Documents\GRANTFOX\api-fox\src\app.js">
+      <file name="app.js" path="/Users/carita/Desktop/grant-fox/api-fox/src/app.js">
         <metrics statements="13" coveredstatements="13" conditionals="2" coveredconditionals="2" methods="2" coveredmethods="1"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
@@ -23,7 +23,7 @@
     </package>
     <package name="src.config">
       <metrics statements="14" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="4" coveredmethods="0"/>
-      <file name="db.js" path="C:\Users\a-abdulkareem\Documents\GRANTFOX\api-fox\src\config\db.js">
+      <file name="db.js" path="/Users/carita/Desktop/grant-fox/api-fox/src/config/db.js">
         <metrics statements="14" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="4" coveredmethods="0"/>
         <line num="1" count="0" type="stmt"/>
         <line num="3" count="0" type="stmt"/>
@@ -43,7 +43,7 @@
     </package>
     <package name="src.middlewares">
       <metrics statements="8" coveredstatements="0" conditionals="2" coveredconditionals="0" methods="3" coveredmethods="0"/>
-      <file name="validate.js" path="C:\Users\a-abdulkareem\Documents\GRANTFOX\api-fox\src\middlewares\validate.js">
+      <file name="validate.js" path="/Users/carita/Desktop/grant-fox/api-fox/src/middlewares/validate.js">
         <metrics statements="8" coveredstatements="0" conditionals="2" coveredconditionals="0" methods="3" coveredmethods="0"/>
         <line num="1" count="0" type="stmt"/>
         <line num="2" count="0" type="stmt"/>
@@ -55,9 +55,29 @@
         <line num="22" count="0" type="stmt"/>
       </file>
     </package>
+    <package name="src.models">
+      <metrics statements="14" coveredstatements="0" conditionals="2" coveredconditionals="0" methods="2" coveredmethods="0"/>
+      <file name="User.model.js" path="/Users/carita/Desktop/grant-fox/api-fox/src/models/User.model.js">
+        <metrics statements="14" coveredstatements="0" conditionals="2" coveredconditionals="0" methods="2" coveredmethods="0"/>
+        <line num="1" count="0" type="stmt"/>
+        <line num="2" count="0" type="stmt"/>
+        <line num="4" count="0" type="stmt"/>
+        <line num="46" count="0" type="stmt"/>
+        <line num="47" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="49" count="0" type="stmt"/>
+        <line num="50" count="0" type="stmt"/>
+        <line num="51" count="0" type="stmt"/>
+        <line num="52" count="0" type="stmt"/>
+        <line num="54" count="0" type="stmt"/>
+        <line num="58" count="0" type="stmt"/>
+        <line num="59" count="0" type="stmt"/>
+        <line num="62" count="0" type="stmt"/>
+        <line num="64" count="0" type="stmt"/>
+      </file>
+    </package>
     <package name="src.validators">
       <metrics statements="4" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
-      <file name="auth.validators.js" path="C:\Users\a-abdulkareem\Documents\GRANTFOX\api-fox\src\validators\auth.validators.js">
+      <file name="auth.validators.js" path="/Users/carita/Desktop/grant-fox/api-fox/src/validators/auth.validators.js">
         <metrics statements="4" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
         <line num="1" count="0" type="stmt"/>
         <line num="3" count="0" type="stmt"/>
