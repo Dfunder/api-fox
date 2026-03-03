@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const { sendSuccess } = require('./utils/response');
 const { getLoggerStream } = require('./utils/logger');
+const authRoutes = require('./routes/auth.routes');
 
 const app = express();
 
@@ -27,6 +28,9 @@ app.use(morgan(morganFormat, { stream: getLoggerStream() }));
 app.get('/api/health', (req, res) => {
   sendSuccess(res, { status: 'ok' }, 200, 'Server is healthy');
 });
+
+// Auth routes
+app.use('/api/auth', authRoutes);
 
 // Global error handling middleware - must be registered last
 const errorHandler = require('./middlewares/errorHandler');

@@ -35,6 +35,16 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Email verification token
+    verificationToken: {
+      type: String,
+      default: null,
+    },
+    // Token expiration date
+    verificationTokenExpires: {
+      type: Date,
+      default: null,
+    },
     // KYC verification status for compliance
     kycStatus: {
       type: String,
