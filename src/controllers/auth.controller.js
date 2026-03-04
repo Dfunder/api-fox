@@ -97,7 +97,7 @@ const login = async (req, res, next) => {
       process.env.JWT_REFRESH_SECRET,
       { expiresIn: refreshTokenExpiresIn }
     );
-
+  
     const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
     const decodedRefreshToken = jwt.decode(refreshToken);
 
@@ -122,54 +122,56 @@ const login = async (req, res, next) => {
 };
 
 /**
- * Verify user email via token
- * GET /api/auth/verify-email/:token
+ * Reset user password using token from reset email
+ * PATCH /api/auth/reset-password/:token
  */
-const verifyEmail = async (req, res, next) => {
+const resetPassword = async (req, res, next) => {
   try {
     const { token } = req.params;
+    const { newPassword } = req.body;
 
-    // Validate token format
-    if (!token || typeof token !== 'string' || token.length !== 64) {
-      const error = new Error('Invalid verification token');
-      error.statusCode = 400;
-      error.isOperational = true;
-      return next(error);
-    }
+    // Hash the provided token to compare with stored hash
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
-    // Find user with matching token and check expiration
+    // Find user with matching reset token and include reset fields
     const user = await User.findOne({
-      verificationToken: token,
-      verificationTokenExpires: { $gt: new Date() },
-    });
+      resetPasswordToken: tokenHash,
+    }).select('+resetPasswordToken +resetPasswordExpires');
 
+    // Check if user exists
     if (!user) {
-      const error = new Error('Invalid or expired verification token');
+      const error = new Error('Invalid reset token');
       error.statusCode = 400;
       error.isOperational = true;
       return next(error);
     }
 
-    // Mark email as verified and clear token fields
-    user.isVerified = true;
-    user.verificationToken = null;
-    user.verificationTokenExpires = null;
-    await user.save();
+    // Check if token has expired
+    if (!user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
+      const error = new Error('Reset token has expired');
+      error.statusCode = 400;
+      error.isOperational = true;
+      return next(error);
+    }
 
-    const userResponse = {
-      id: user._id,
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role,
-      isVerified: user.isVerified,
-      createdAt: user.createdAt,
-    };
+    // Update password (will be hashed by pre-save hook)
+    user.password = newPassword;
+
+    // Invalidate the reset token
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+
+    // Invalidate all existing refresh tokens
+    user.refreshTokenHash = null;
+    user.refreshTokenExpiresAt = null;
+
+    await user.save();
 
     return sendSuccess(
       res,
-      { user: userResponse },
+      {},
       200,
-      'Email verified successfully. You can now log in.'
+      'Password reset successfully. Please login with your new password.'
     );
   } catch (error) {
     return next(error);
@@ -179,5 +181,5 @@ const verifyEmail = async (req, res, next) => {
 module.exports = {
   register,
   login,
-  verifyEmail,
+  resetPassword,
 };

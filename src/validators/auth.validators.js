@@ -26,7 +26,20 @@ const loginSchema = Joi.object({
   }),
 });
 
+const resetPasswordSchema = Joi.object({
+  token: Joi.string().hex().length(64).required().messages({
+    'string.hex': 'Token must be a valid hexadecimal string',
+    'string.length': 'Token must be 64 characters long',
+    'any.required': 'Token is required',
+  }),
+  newPassword: Joi.string().min(8).required().messages({
+    'string.min': 'New password must be at least 8 characters long',
+    'any.required': 'New password is required',
+  }),
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
+  resetPasswordSchema,
 };
