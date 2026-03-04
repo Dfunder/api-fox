@@ -5,6 +5,34 @@ const User = require('../models/User.model');
 const { sendSuccess } = require('../utils/response');
 
 /**
+ * Logout user by invalidating refresh token
+ * POST /api/auth/logout
+ */
+const logout = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+
+    // Find the user and clear their refresh token
+    const user = await User.findById(userId);
+    if (!user) {
+      const error = new Error('User not found');
+      error.statusCode = 404;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    // Clear the stored refresh token
+    user.refreshTokenHash = null;
+    user.refreshTokenExpiresAt = null;
+    await user.save();
+
+    return sendSuccess(res, {}, 200, 'Logout successful');
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
  * Register a new user
  * POST /api/auth/register
  */
@@ -124,4 +152,5 @@ const login = async (req, res, next) => {
 module.exports = {
   register,
   login,
+  logout,
 };
