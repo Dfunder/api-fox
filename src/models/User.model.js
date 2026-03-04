@@ -56,6 +56,17 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Password reset token for password recovery
+    resetPasswordToken: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    // Password reset token expiration date
+    resetPasswordExpires: {
+      type: Date,
+      default: null,
+    },
     // KYC verification status for compliance
     kycStatus: {
       type: String,

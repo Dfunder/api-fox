@@ -3,6 +3,9 @@ const { register, login, logout } = require('../controllers/auth.controller');
 const validate = require('../middlewares/validate');
 const authenticate = require('../middlewares/auth');
 const { registerSchema, loginSchema } = require('../validators/auth.validators');
+const { register, login, resetPassword } = require('../controllers/auth.controller');
+const validate = require('../middlewares/validate');
+const { registerSchema, loginSchema, resetPasswordSchema } = require('../validators/auth.validators');
 
 const router = express.Router();
 
@@ -14,5 +17,7 @@ router.post('/login', validate(loginSchema), login);
 
 // POST /api/auth/logout - Logout user (requires authentication)
 router.post('/logout', authenticate, logout);
+// PATCH /api/auth/reset-password/:token - Reset user password with token
+router.patch('/reset-password/:token', validate(resetPasswordSchema), resetPassword);
 
 module.exports = router;
