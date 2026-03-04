@@ -3,6 +3,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User.model');
 const { sendSuccess } = require('../utils/response');
+const { sendEmail } = require('../services/email.service');
+const emailVerificationTemplate = require('../services/templates/emailVerification.template');
 
 /**
  * Logout user by invalidating refresh token
@@ -33,7 +35,7 @@ const logout = async (req, res, next) => {
 };
 
 /**
- * Register a new user
+ * Register a new user and send a verification email
  * POST /api/auth/register
  */
 const register = async (req, res, next) => {
@@ -49,29 +51,41 @@ const register = async (req, res, next) => {
       return next(error);
     }
 
-    // Generate email verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    // Generate a secure random email verification token (32 bytes = 64 hex chars)
+    const emailVerificationToken = crypto.randomBytes(32).toString('hex');
+    const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    // Create new user
+    // Create new user with verification token fields
     const user = new User({
       fullName,
       email: email.toLowerCase(),
       password,
-      verificationToken,
-      verificationTokenExpires,
+      emailVerificationToken,
+      emailVerificationExpires,
     });
 
     await user.save();
 
-    // Return user info (exclude password)
+    // Send verification email (non-blocking — registration still succeeds if email fails)
+    try {
+      const verificationLink = `${process.env.APP_BASE_URL || 'http://localhost:3000'}/api/auth/verify-email/${emailVerificationToken}`;
+      await sendEmail({
+        to: user.email,
+        subject: 'Verify your email address',
+        html: emailVerificationTemplate(user.fullName, verificationLink),
+      });
+    } catch (emailError) {
+      // Log but don't fail the registration — the token is stored and can be resent
+      console.error('Failed to send verification email:', emailError.message);
+    }
+
+    // Return user info (exclude password and internal token fields)
     const userResponse = {
       id: user._id,
       fullName: user.fullName,
       email: user.email,
       role: user.role,
       isVerified: user.isVerified,
-      verificationToken,
       createdAt: user.createdAt,
     };
 
@@ -87,6 +101,45 @@ const register = async (req, res, next) => {
 };
 
 /**
+ * Verify email address using token from verification email
+ * GET /api/auth/verify-email/:token
+ */
+const verifyEmail = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+
+    // Find user with a matching, non-expired verification token
+    const user = await User.findOne({
+      emailVerificationToken: token,
+      emailVerificationExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      const error = new Error('Invalid or expired verification token');
+      error.statusCode = 400;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    // Mark email as verified and clear the token fields
+    user.isVerified = true;
+    user.emailVerificationToken = null;
+    user.emailVerificationExpires = null;
+
+    await user.save();
+
+    return sendSuccess(
+      res,
+      {},
+      200,
+      'Email verified successfully. You can now log in.'
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
  * Login user and issue access + refresh tokens
  * POST /api/auth/login
  */
@@ -95,7 +148,11 @@ const login = async (req, res, next) => {
     const { email, password } = req.body;
     const normalizedEmail = email.toLowerCase();
 
-    const user = await User.findOne({ email: normalizedEmail }).select('+password +refreshTokenHash');
+    const user = await User.findOne({ email: normalizedEmail }).select(
+      '+password +refreshTokenHash'
+    );
+
+    // Reject if user does not exist or has not verified their email
     if (!user || !user.isVerified) {
       const error = new Error('Invalid credentials');
       error.statusCode = 401;
@@ -115,7 +172,12 @@ const login = async (req, res, next) => {
     const refreshTokenExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 
     const accessToken = jwt.sign(
-      { sub: user._id.toString(), email: user.email, role: user.role, type: 'access' },
+      {
+        sub: user._id.toString(),
+        email: user.email,
+        role: user.role,
+        type: 'access',
+      },
       process.env.JWT_SECRET,
       { expiresIn: accessTokenExpiresIn }
     );
@@ -125,8 +187,11 @@ const login = async (req, res, next) => {
       process.env.JWT_REFRESH_SECRET,
       { expiresIn: refreshTokenExpiresIn }
     );
-  
-    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
+    const refreshTokenHash = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
     const decodedRefreshToken = jwt.decode(refreshToken);
 
     user.refreshTokenHash = refreshTokenHash;
@@ -211,4 +276,5 @@ module.exports = {
   login,
   logout,
   resetPassword,
+  verifyEmail,
 };
