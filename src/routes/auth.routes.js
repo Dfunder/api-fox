@@ -2,7 +2,6 @@ const express = require('express');
 const { register, login, logout } = require('../controllers/auth.controller');
 const validate = require('../middlewares/validate');
 const authenticate = require('../middlewares/auth');
-const { loginSchema } = require('../validators/auth.validators');
 const { register, login, resetPassword } = require('../controllers/auth.controller');
 const validate = require('../middlewares/validate');
 const { registerSchema, loginSchema, resetPasswordSchema } = require('../validators/auth.validators');
