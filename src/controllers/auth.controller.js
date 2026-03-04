@@ -121,7 +121,63 @@ const login = async (req, res, next) => {
   }
 };
 
+/**
+ * Verify user email via token
+ * GET /api/auth/verify-email/:token
+ */
+const verifyEmail = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+
+    // Validate token format
+    if (!token || typeof token !== 'string' || token.length !== 64) {
+      const error = new Error('Invalid verification token');
+      error.statusCode = 400;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    // Find user with matching token and check expiration
+    const user = await User.findOne({
+      verificationToken: token,
+      verificationTokenExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      const error = new Error('Invalid or expired verification token');
+      error.statusCode = 400;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    // Mark email as verified and clear token fields
+    user.isVerified = true;
+    user.verificationToken = null;
+    user.verificationTokenExpires = null;
+    await user.save();
+
+    const userResponse = {
+      id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+      isVerified: user.isVerified,
+      createdAt: user.createdAt,
+    };
+
+    return sendSuccess(
+      res,
+      { user: userResponse },
+      200,
+      'Email verified successfully. You can now log in.'
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
+  verifyEmail,
 };
