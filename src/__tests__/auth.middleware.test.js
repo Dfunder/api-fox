@@ -5,7 +5,6 @@ const app = require('../app');
 describe('JWT Authentication Middleware', () => {
   let validToken;
   let expiredToken;
-  let invalidToken;
 
   beforeAll(() => {
     // Create a valid token for testing
@@ -14,9 +13,6 @@ describe('JWT Authentication Middleware', () => {
     
     // Create an expired token
     expiredToken = jwt.sign(payload, process.env.JWT_SECRET || 'test-secret', { expiresIn: '-1h' });
-    
-    // Invalid token (not a proper JWT)
-    invalidToken = 'invalid.token.here';
   });
 
   describe('Protected routes without token', () => {
