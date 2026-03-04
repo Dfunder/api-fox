@@ -5,6 +5,7 @@ const morgan = require('morgan');
 const { sendSuccess } = require('./utils/response');
 const { getLoggerStream } = require('./utils/logger');
 const authRoutes = require('./routes/auth.routes');
+const protectedRoutes = require('./routes/protected.routes');
 
 const app = express();
 
@@ -31,6 +32,9 @@ app.get('/api/health', (req, res) => {
 
 // Auth routes
 app.use('/api/auth', authRoutes);
+
+// Protected routes
+app.use('/api/protected', protectedRoutes);
 
 // Global error handling middleware - must be registered last
 const errorHandler = require('./middlewares/errorHandler');
