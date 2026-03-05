@@ -4,6 +4,7 @@ const {
   login,
   logout,
   resetPassword,
+  forgotPassword,
   verifyEmail,
 } = require('../controllers/auth.controller');
 const validate = require('../middlewares/validate');
@@ -12,6 +13,7 @@ const {
   registerSchema,
   loginSchema,
   resetPasswordSchema,
+  forgotPasswordSchema,
 } = require('../validators/auth.validators');
 
 const router = express.Router();
@@ -25,12 +27,11 @@ router.post('/login', validate(loginSchema), login);
 // POST /api/auth/logout - Logout user (requires authentication)
 router.post('/logout', authenticate, logout);
 
+// POST /api/auth/forgot-password - Request a password reset email
+router.post('/forgot-password', validate(forgotPasswordSchema), forgotPassword);
+
 // PATCH /api/auth/reset-password/:token - Reset user password with token
-router.patch(
-  '/reset-password/:token',
-  validate(resetPasswordSchema),
-  resetPassword
-);
+router.patch('/reset-password/:token', validate(resetPasswordSchema), resetPassword);
 
 // GET /api/auth/verify-email/:token - Verify email address using token from verification email
 router.get('/verify-email/:token', verifyEmail);
