@@ -1,8 +1,8 @@
 const express = require('express');
-const { register, login, logout, resetPassword } = require('../controllers/auth.controller');
+const { register, login, logout, resetPassword, forgotPassword } = require('../controllers/auth.controller');
 const validate = require('../middlewares/validate');
 const authenticate = require('../middlewares/auth');
-const { registerSchema, loginSchema, resetPasswordSchema } = require('../validators/auth.validators');
+const { registerSchema, loginSchema, resetPasswordSchema, forgotPasswordSchema } = require('../validators/auth.validators');
 
 const router = express.Router();
 
@@ -14,6 +14,9 @@ router.post('/login', validate(loginSchema), login);
 
 // POST /api/auth/logout - Logout user (requires authentication)
 router.post('/logout', authenticate, logout);
+// POST /api/auth/forgot-password - Request a password reset email
+router.post('/forgot-password', validate(forgotPasswordSchema), forgotPassword);
+
 // PATCH /api/auth/reset-password/:token - Reset user password with token
 router.patch('/reset-password/:token', validate(resetPasswordSchema), resetPassword);
 

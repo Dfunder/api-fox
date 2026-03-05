@@ -3,6 +3,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User.model');
 const { sendSuccess } = require('../utils/response');
+const { sendEmail } = require('../services/email.service');
+const passwordResetTemplate = require('../services/templates/passwordReset.template');
 
 /**
  * Logout user by invalidating refresh token
@@ -206,9 +208,60 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
+/**
+ * Request a password reset email
+ * POST /api/auth/forgot-password
+ */
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const genericMessage =
+      'If an account with that email exists, a password reset link has been sent.';
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      return sendSuccess(res, {}, 200, genericMessage);
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    user.resetPasswordToken = resetTokenHash;
+    user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    await user.save();
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
+    const html = passwordResetTemplate(user.fullName, resetLink, '1 hour');
+
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Password Reset Request',
+        html,
+      });
+    } catch {
+      user.resetPasswordToken = null;
+      user.resetPasswordExpires = null;
+      await user.save();
+
+      const error = new Error('Failed to send password reset email. Please try again later.');
+      error.statusCode = 500;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    return sendSuccess(res, {}, 200, genericMessage);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
   logout,
   resetPassword,
+  forgotPassword,
 };
