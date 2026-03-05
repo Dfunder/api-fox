@@ -9,12 +9,20 @@
  */
 const getLoggerStream = () => {
   return {
-    write: (message) => {
+    write: message => {
       if (message && typeof message === 'string') {
         console.log(message.trim());
       }
-    }
+    },
   };
 };
 
-module.exports = { getLoggerStream };
+const info = (...args) => {
+  console.log(...args);
+};
+
+const error = (...args) => {
+  console.error(...args);
+};
+
+module.exports = { getLoggerStream, info, error };
