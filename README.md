@@ -93,6 +93,20 @@ Swagger is controlled via environment variables:
 - **Production**: Swagger is **disabled** by default (set `ENABLE_SWAGGER=true` to override)
 - **Explicit override**: Set `ENABLE_SWAGGER=true` or `ENABLE_SWAGGER=false` to force enable/disable regardless of environment
 
+## Rate limiting configuration
+
+The application ships with a built‑in rate limiter based on [`express-rate-limit`](https://www.npmjs.com/package/express-rate-limit). It protects the entire API with a permissive window, and adds a more restrictive policy to
+all `/api/auth` endpoints.
+
+| Variable             | Description                                                 | Default         |
+|----------------------|-------------------------------------------------------------|-----------------|
+| `RATE_LIMIT_WINDOW_MS` | Time window in milliseconds                                | `900000` (15m)  |
+| `RATE_LIMIT_MAX`       | Max requests per window for general routes                 | `100`           |
+| `AUTH_RATE_LIMIT_MAX`  | Max requests per window for auth routes                    | `10`            |
+
+When a client exceeds the limit the server replies with `429 Too Many Requests` and a `Retry-After` header indicating how many seconds remain
+in the current window.
+
 ## Example `.env` Configuration
 
 ```env
@@ -103,6 +117,11 @@ ENABLE_SWAGGER=true
 # Or disable in development
 NODE_ENV=development
 ENABLE_SWAGGER=false
+
+# Rate limiting (optional overrides)
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX=100
+AUTH_RATE_LIMIT_MAX=10
 ```
 
 # 📌 How to Contribute

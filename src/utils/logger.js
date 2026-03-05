@@ -17,9 +17,21 @@ const getLoggerStream = () => {
   };
 };
 
+
+/**
+ * Logs an informational message
+ * @param {...any} args - Message and optional metadata
+ */
+
 const info = (...args) => {
   console.log(...args);
 };
+
+
+/**
+ * Logs an error message
+ * @param {...any} args - Message and optional metadata
+ */
 
 const error = (...args) => {
   console.error(...args);
