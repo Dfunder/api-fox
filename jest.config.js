@@ -1,10 +1,8 @@
 module.exports = {
   testEnvironment: 'node',
+  setupFiles: ['./jest.setup.js'],
   coverageDirectory: 'coverage',
-  collectCoverageFrom: [
-    'src/**/*.js',
-    '!src/server.js',
-  ],
+  collectCoverageFrom: ['src/**/*.js', '!src/server.js'],
   coverageThreshold: {
     global: {
       branches: 0,
@@ -13,8 +11,5 @@ module.exports = {
       statements: 0,
     },
   },
-  testMatch: [
-    '**/__tests__/**/*.js',
-    '**/?(*.)+(spec|test).js',
-  ],
+  testMatch: ['**/__tests__/**/*.js', '**/?(*.)+(spec|test).js'],
 };

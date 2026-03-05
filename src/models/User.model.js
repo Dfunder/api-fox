@@ -35,13 +35,13 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    // Email verification token
-    verificationToken: {
+    // Secure random token sent to user's email for verification
+    emailVerificationToken: {
       type: String,
       default: null,
     },
-    // Token expiration date
-    verificationTokenExpires: {
+    // Expiry date for the email verification token (24 hours from registration)
+    emailVerificationExpires: {
       type: Date,
       default: null,
     },

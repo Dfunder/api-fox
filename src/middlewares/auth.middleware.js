@@ -9,7 +9,7 @@ const authMiddleware = (req, res, next) => {
   try {
     // Get token from Authorization header
     const authHeader = req.header('Authorization');
-    
+
     if (!authHeader) {
       return res.status(401).json({
         success: false,
@@ -37,10 +37,10 @@ const authMiddleware = (req, res, next) => {
 
     // Verify and decode the JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+
     // Attach user information to request object
     req.user = decoded;
-    
+
     // Continue to the next middleware or route handler
     next();
   } catch (error) {
@@ -51,11 +51,11 @@ const authMiddleware = (req, res, next) => {
         message: 'Access denied. Invalid token.',
       });
     }
-    
+
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
-        message: 'Access denied. Token expired.',
+        message: 'Access denied. Token expired. Please log in again.',
       });
     }
 
