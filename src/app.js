@@ -34,8 +34,8 @@ app.get('/api/health', (req, res) => {
   sendSuccess(res, { status: 'ok' }, 200, 'Server is healthy');
 });
 
-// Auth routes
-app.use('/api/auth', authRoutes);
+// Auth routes (stricter rate limit)
+app.use('/api/auth', authLimiter, authRoutes);
 
 // Protected routes
 app.use('/api/protected', protectedRoutes);
