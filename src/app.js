@@ -7,6 +7,7 @@ const { getLoggerStream } = require('./utils/logger');
 const { globalLimiter, authLimiter } = require('./middlewares/rateLimiter');
 const authRoutes = require('./routes/auth.routes');
 const protectedRoutes = require('./routes/protected.routes');
+const adminRoutes = require('./routes/admin.routes');
 
 const app = express();
 
@@ -39,6 +40,9 @@ app.use('/api/auth', authLimiter, authRoutes);
 
 // Protected routes
 app.use('/api/protected', protectedRoutes);
+
+// Admin routes
+app.use('/api/admin', adminRoutes);
 
 // Global error handling middleware - must be registered last
 const errorHandler = require('./middlewares/errorHandler');
