@@ -7,6 +7,7 @@ const {
   forgotPassword,
   verifyEmail,
   refreshToken,
+  changePassword,
 } = require('../controllers/auth.controller');
 const validate = require('../middlewares/validate');
 const authenticate = require('../middlewares/auth');
@@ -16,6 +17,7 @@ const {
   resetPasswordSchema,
   forgotPasswordSchema,
   refreshTokenSchema,
+  changePasswordSchema,
 } = require('../validators/auth.validators');
 
 const router = express.Router();
@@ -44,5 +46,13 @@ router.get('/verify-email/:token', verifyEmail);
 
 // POST /api/auth/refresh-token - Refresh access token using refresh token
 router.post('/refresh-token', validate(refreshTokenSchema), refreshToken);
+
+// PATCH /api/auth/change-password - Change password for authenticated user
+router.patch(
+  '/change-password',
+  authenticate,
+  validate(changePasswordSchema),
+  changePassword
+);
 
 module.exports = router;
