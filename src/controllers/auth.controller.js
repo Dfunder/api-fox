@@ -439,6 +439,68 @@ const refreshToken = async (req, res, next) => {
     return next(error);
   }
 };
+/**
+ * Change authenticated user's password
+ * PATCH /api/auth/change-password
+ *
+ * Add this function to src/controllers/auth.controller.js
+ * and include it in the module.exports object at the bottom.
+ */
+const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    // req.userId is set by the authenticate middleware (same as logout)
+    const user = await User.findById(req.userId).select('+password');
+    if (!user) {
+      const error = new Error('User not found');
+      error.statusCode = 404;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    // Verify the supplied current password against the stored hash
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+    if (!isCurrentPasswordValid) {
+      const error = new Error('Current password is incorrect');
+      error.statusCode = 401;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    // Prevent reuse of the same password
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      const error = new Error(
+        'New password must be different from the current password'
+      );
+      error.statusCode = 400;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    // Assign plain-text password — the User model's pre-save hook hashes it
+    user.password = newPassword;
+
+    // Invalidate all existing refresh tokens (force re-login on other devices)
+    user.refreshTokenHash = null;
+    user.refreshTokenExpiresAt = null;
+
+    await user.save();
+
+    return sendSuccess(
+      res,
+      {},
+      200,
+      'Password changed successfully. Please log in again.'
+    );
+  } catch (error) {
+    return next(error);
+  }
+};
 
 module.exports = {
   register,
@@ -448,4 +510,5 @@ module.exports = {
   forgotPassword,
   verifyEmail,
   refreshToken,
+  changePassword,
 };
