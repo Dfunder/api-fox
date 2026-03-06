@@ -6,6 +6,7 @@ const {
   resetPassword,
   forgotPassword,
   verifyEmail,
+  refreshToken,
 } = require('../controllers/auth.controller');
 const validate = require('../middlewares/validate');
 const authenticate = require('../middlewares/auth');
@@ -14,6 +15,7 @@ const {
   loginSchema,
   resetPasswordSchema,
   forgotPasswordSchema,
+  refreshTokenSchema,
 } = require('../validators/auth.validators');
 
 const router = express.Router();
@@ -31,9 +33,16 @@ router.post('/logout', authenticate, logout);
 router.post('/forgot-password', validate(forgotPasswordSchema), forgotPassword);
 
 // PATCH /api/auth/reset-password/:token - Reset user password with token
-router.patch('/reset-password/:token', validate(resetPasswordSchema), resetPassword);
+router.patch(
+  '/reset-password/:token',
+  validate(resetPasswordSchema),
+  resetPassword
+);
 
 // GET /api/auth/verify-email/:token - Verify email address using token from verification email
 router.get('/verify-email/:token', verifyEmail);
+
+// POST /api/auth/refresh-token - Refresh access token using refresh token
+router.post('/refresh-token', validate(refreshTokenSchema), refreshToken);
 
 module.exports = router;
