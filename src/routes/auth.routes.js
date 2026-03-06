@@ -7,6 +7,7 @@ const {
   forgotPassword,
   verifyEmail,
   refreshToken,
+  changePassword,
 } = require('../controllers/auth.controller');
 const validate = require('../middlewares/validate');
 const authenticate = require('../middlewares/auth');
@@ -16,6 +17,7 @@ const {
   resetPasswordSchema,
   forgotPasswordSchema,
   refreshTokenSchema,
+  changePasswordSchema,
 } = require('../validators/auth.validators');
 
 const router = express.Router();
