@@ -289,7 +289,10 @@ const forgotPassword = async (req, res, next) => {
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const resetTokenHash = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
 
     user.resetPasswordToken = resetTokenHash;
     user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
@@ -310,7 +313,9 @@ const forgotPassword = async (req, res, next) => {
       user.resetPasswordExpires = null;
       await user.save();
 
-      const error = new Error('Failed to send password reset email. Please try again later.');
+      const error = new Error(
+        'Failed to send password reset email. Please try again later.'
+      );
       error.statusCode = 500;
       error.isOperational = true;
       return next(error);
@@ -322,6 +327,119 @@ const forgotPassword = async (req, res, next) => {
   }
 };
 
+/**
+ * Refresh access token using a valid refresh token
+ * POST /api/auth/refresh-token
+ */
+const refreshToken = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+
+    // Verify the refresh token
+    const decodedRefreshToken = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET
+    );
+
+    if (decodedRefreshToken.type !== 'refresh') {
+      const error = new Error('Invalid token type');
+      error.statusCode = 403;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    // Find the user and include the refresh token hash
+    const user = await User.findById(decodedRefreshToken.sub).select(
+      '+refreshTokenHash +refreshTokenExpiresAt'
+    );
+
+    if (!user) {
+      const error = new Error('User not found');
+      error.statusCode = 403;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    // Check if refresh token has expired
+    if (user.refreshTokenExpiresAt && user.refreshTokenExpiresAt < new Date()) {
+      const error = new Error('Refresh token has expired');
+      error.statusCode = 403;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    // Hash the provided refresh token and compare with stored hash
+    const refreshTokenHash = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
+
+    if (user.refreshTokenHash !== refreshTokenHash) {
+      const error = new Error('Invalid refresh token');
+      error.statusCode = 403;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    // Generate new access token
+    const accessTokenExpiresIn = process.env.JWT_EXPIRES_IN || '15m';
+    const newAccessToken = jwt.sign(
+      {
+        sub: user._id.toString(),
+        email: user.email,
+        role: user.role,
+        type: 'access',
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: accessTokenExpiresIn }
+    );
+
+    // Optionally rotate the refresh token
+    const refreshTokenExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
+    const newRefreshToken = jwt.sign(
+      { sub: user._id.toString(), type: 'refresh' },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: refreshTokenExpiresIn }
+    );
+
+    // Hash the new refresh token and update user record
+    const newRefreshTokenHash = crypto
+      .createHash('sha256')
+      .update(newRefreshToken)
+      .digest('hex');
+
+    const newDecodedRefreshToken = jwt.decode(newRefreshToken);
+
+    user.refreshTokenHash = newRefreshTokenHash;
+    user.refreshTokenExpiresAt = newDecodedRefreshToken?.exp
+      ? new Date(newDecodedRefreshToken.exp * 1000)
+      : null;
+
+    await user.save();
+
+    return sendSuccess(
+      res,
+      {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+      },
+      200,
+      'Token refreshed successfully'
+    );
+  } catch (error) {
+    if (
+      error.name === 'JsonWebTokenError' ||
+      error.name === 'TokenExpiredError'
+    ) {
+      const tokenError = new Error('Invalid or expired refresh token');
+      tokenError.statusCode = 403;
+      tokenError.isOperational = true;
+      return next(tokenError);
+    }
+    return next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -329,4 +447,5 @@ module.exports = {
   resetPassword,
   forgotPassword,
   verifyEmail,
+  refreshToken,
 };
