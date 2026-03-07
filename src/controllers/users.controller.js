@@ -1,4 +1,3 @@
-const User = require('../models/User.model');
 const { sendSuccess } = require('../utils/response');
 
 /**
