@@ -6,6 +6,7 @@ const { sendSuccess } = require('./utils/response');
 const { getLoggerStream } = require('./utils/logger');
 const { globalLimiter, authLimiter } = require('./middlewares/rateLimiter');
 const authRoutes = require('./routes/auth.routes');
+const userRoutes = require('./routes/users.routes');
 const protectedRoutes = require('./routes/protected.routes');
 const adminRoutes = require('./routes/admin.routes');
 
@@ -40,6 +41,9 @@ app.use('/api/auth', authLimiter, authRoutes);
 
 // Protected routes
 app.use('/api/protected', protectedRoutes);
+
+// User routes (requires authentication)
+app.use('/api/users', userRoutes);
 
 // Admin routes
 app.use('/api/admin', adminRoutes);
