@@ -1,3 +1,4 @@
+const User = require('../models/User.model');
 const { sendSuccess } = require('../utils/response');
 
 /**
@@ -7,11 +8,8 @@ const { sendSuccess } = require('../utils/response');
  */
 const getCurrentUser = async (req, res, next) => {
   try {
-    // The authenticate middleware already attaches the user to req.user
-    // We need to exclude sensitive fields before sending the response
     const user = req.user.toObject();
 
-    // Remove sensitive fields
     delete user.password;
     delete user.refreshTokenHash;
     delete user.resetPasswordToken;
@@ -23,6 +21,34 @@ const getCurrentUser = async (req, res, next) => {
   }
 };
 
+/**
+ * Update current authenticated user's profile
+ * @route PATCH /api/users/me
+ * @access Private (requires authentication)
+ */
+const updateCurrentUser = async (req, res, next) => {
+  try {
+    const { fullName, walletAddress } = req.body;
+
+    // Build update object with only allowed fields
+    const allowedUpdates = {};
+    if (fullName !== undefined) allowedUpdates.fullName = fullName;
+    if (walletAddress !== undefined) allowedUpdates.walletAddress = walletAddress;
+
+    // Update and return the new document
+    const updatedUser = await User.findByIdAndUpdate(
+      req.userId,
+      { $set: allowedUpdates },
+      { new: true, runValidators: true }
+    ).select('-password -refreshTokenHash -resetPasswordToken -emailVerificationToken');
+
+    return sendSuccess(res, updatedUser, 200, 'Profile updated successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getCurrentUser,
-};
+  updateCurrentUser,
+};  
