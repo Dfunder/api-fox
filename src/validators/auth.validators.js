@@ -64,6 +64,21 @@ const changePasswordSchema = Joi.object({
   }),
 });
 
+const updateProfileSchema = Joi.object({
+  fullName: Joi.string().min(2).max(100).messages({
+    'string.min': 'Full name must be at least 2 characters long',
+    'string.max': 'Full name cannot exceed 100 characters',
+  }),
+  walletAddress: Joi.string()
+    .pattern(/^G[A-Z2-7]{55}$/)
+    .messages({
+      'string.pattern.base':
+        'Wallet address must be a valid Stellar address (starts with G, 56 characters)',
+    }),
+}).min(1).messages({
+  'object.min': 'At least one field (fullName or walletAddress) must be provided',
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
@@ -71,4 +86,5 @@ module.exports = {
   forgotPasswordSchema,
   refreshTokenSchema,
   changePasswordSchema,
+  updateProfileSchema,
 };
