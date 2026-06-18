@@ -86,8 +86,51 @@ const listUsers = async (req, res, next) => {
   }
 };
 
+/**
+ * Update a user role (admin only)
+ * @route PATCH /api/admin/users/:id/role
+ * @access Admin only
+ */
+const updateUserRole = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    const validRoles = ['user', 'admin'];
+    if (!role || !validRoles.includes(role)) {
+      return sendError(res, 'Role must be either user or admin', 400);
+    }
+
+    if (req.userId === id && role === 'user') {
+      return sendError(res, 'You cannot downgrade your own role', 403);
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return sendError(res, 'User not found', 404);
+    }
+
+    user.role = role;
+    await user.save();
+
+    return sendSuccess(
+      res,
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+      200,
+      'User role updated successfully'
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   deleteUser,
   restoreUser,
   listUsers,
+  updateUserRole,
 };
