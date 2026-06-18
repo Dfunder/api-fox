@@ -21,6 +21,30 @@ const getCurrentUser = async (req, res, next) => {
   }
 };
 
+const getCurrentUserKyc = async (req, res, next) => {
+  try {
+    const hasSubmittedKyc =
+      Boolean(req.user.kycSubmissionDate) || req.user.kycStatus !== 'pending';
+
+    if (!hasSubmittedKyc) {
+      const error = new Error('No KYC submission found');
+      error.statusCode = 404;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    const kyc = {
+      status: req.user.kycStatus,
+      submissionDate: req.user.kycSubmissionDate,
+      reviewNotes: req.user.kycReviewNotes || null,
+    };
+
+    return sendSuccess(res, kyc, 200, 'KYC status retrieved successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
 /**
  * Update current authenticated user's profile
  * @route PATCH /api/users/me
@@ -50,5 +74,6 @@ const updateCurrentUser = async (req, res, next) => {
 
 module.exports = {
   getCurrentUser,
+  getCurrentUserKyc,
   updateCurrentUser,
 };  

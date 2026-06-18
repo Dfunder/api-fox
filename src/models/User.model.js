@@ -73,6 +73,15 @@ const userSchema = new mongoose.Schema(
       enum: ['pending', 'approved', 'rejected'],
       default: 'pending',
     },
+    kycSubmissionDate: {
+      type: Date,
+      default: null,
+    },
+    kycReviewNotes: {
+      type: String,
+      trim: true,
+      default: null,
+    },
     // Stellar wallet address for blockchain integration
     walletAddress: {
       type: String,
