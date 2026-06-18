@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -23,6 +24,8 @@ app.use(
     allowedHeaders: ['Authorization', 'Content-Type'],
   })
 );
+// Serve static files from uploads directory
+app.use('/uploads', express.static('uploads'));
 app.use(helmet());
 
 // rate limiting middleware

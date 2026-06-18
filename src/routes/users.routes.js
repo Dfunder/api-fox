@@ -4,6 +4,8 @@ const {
   getCurrentUser,
   getCurrentUserKyc,
   updateCurrentUser,
+  uploadAvatar,
+  upload
 } = require('../controllers/users.controller');
 const { updateProfileSchema } = require('../validators/auth.validators');
 const validate = require('../middlewares/validate');
@@ -18,5 +20,8 @@ router.get('/me/kyc', authenticate, getCurrentUserKyc);
 
 // PATCH /api/users/me - Update current authenticated user's profile
 router.patch('/me', authenticate, validate(updateProfileSchema), updateCurrentUser);
+
+// POST /api/users/me/avatar - Upload profile picture/avatar
+router.post('/me/avatar', authenticate, upload.single('avatar'), uploadAvatar);
 
 module.exports = router;

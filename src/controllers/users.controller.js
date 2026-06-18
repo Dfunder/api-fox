@@ -1,5 +1,44 @@
 const User = require('../models/User.model');
 const { sendSuccess } = require('../utils/response');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // Create uploads directory if it doesn't exist
+    const uploadDir = path.join(__dirname, '../../uploads/avatars');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Create unique filename: userId-timestamp.extension
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `${req.userId}-${uniqueSuffix}${ext}`);
+  }
+});
+
+// File filter to accept only jpeg and png
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only JPEG and PNG are allowed.'), false);
+  }
+};
+
+// Create multer upload instance with 2MB limit
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 2 * 1024 * 1024 // 2MB
+  }
+});
 
 /**
  * Get current authenticated user's profile
@@ -72,8 +111,58 @@ const updateCurrentUser = async (req, res, next) => {
   }
 };
 
+/**
+ * Upload profile picture/avatar for current authenticated user
+ * @route POST /api/users/me/avatar
+ * @access Private (requires authentication)
+ */
+const uploadAvatar = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      const error = new Error('No file uploaded');
+      error.statusCode = 400;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    // Delete old avatar if it exists
+    if (req.user.avatar) {
+      const oldAvatarPath = path.join(__dirname, '../../', req.user.avatar);
+      if (fs.existsSync(oldAvatarPath)) {
+        fs.unlinkSync(oldAvatarPath);
+      }
+    }
+
+    // Store relative path in database
+    const avatarPath = `uploads/avatars/${req.file.filename}`;
+
+    // Update user with new avatar path
+    const updatedUser = await User.findByIdAndUpdate(
+      req.userId,
+      { $set: { avatar: avatarPath } },
+      { new: true, runValidators: true }
+    ).select('-password -refreshTokenHash -resetPasswordToken -emailVerificationToken');
+
+    return sendSuccess(res, updatedUser, 200, 'Profile picture uploaded successfully');
+  } catch (error) {
+    // If there's a multer error (file size, invalid type), set appropriate status
+    if (error instanceof multer.MulterError) {
+      if (error.code === 'LIMIT_FILE_SIZE') {
+        error.statusCode = 400;
+        error.message = 'File too large. Maximum size is 2MB.';
+      } else {
+        error.statusCode = 400;
+      }
+      error.isOperational = true;
+    }
+    next(error);
+  }
+};
+
 module.exports = {
   getCurrentUser,
   getCurrentUserKyc,
   updateCurrentUser,
-};  
+  uploadAvatar,
+  upload // Export multer upload middleware
+};

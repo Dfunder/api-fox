@@ -75,6 +75,10 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: null,
     },
+    // User's profile picture/avatar path
+    avatar: {
+      type: String,
+      trim: true,
     // Soft delete field
     deletedAt: {
       type: Date,

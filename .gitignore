@@ -24,3 +24,6 @@ lerna-debug.log*
 .tmp
 
 coverage/
+
+# Uploaded files
+/uploads/
