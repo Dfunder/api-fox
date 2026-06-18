@@ -2,6 +2,7 @@ const express = require('express');
 const authenticate = require('../middlewares/auth');
 const authorize = require('../middlewares/authorize');
 const { sendSuccess } = require('../utils/response');
+const User = require('../models/User.model');
 
 const router = express.Router();
 
@@ -36,6 +37,22 @@ router.get('/users', (req, res) => {
         users: [],
         message: 'User management system placeholder'
     }, 200, 'Users retrieved successfully');
+});
+
+// GET /api/admin/kyc - List KYC submissions with optional status filter
+router.get('/kyc', async (req, res, next) => {
+    try {
+        const { status } = req.query;
+        const allowedStatuses = ['pending', 'approved', 'rejected'];
+        const kycStatus = allowedStatuses.includes(status) ? status : 'pending';
+
+        const users = await User.find({ kycStatus })
+            .select('fullName email kycStatus walletAddress role isVerified createdAt updatedAt');
+
+        sendSuccess(res, { users, count: users.length }, 200, 'KYC submissions retrieved');
+    } catch (error) {
+        next(error);
+    }
 });
 
 module.exports = router;
