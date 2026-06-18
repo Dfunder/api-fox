@@ -3,14 +3,12 @@ const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema(
   {
-    // User's full name with validation
     fullName: {
       type: String,
       required: true,
       trim: true,
       maxlength: 100,
     },
-    // Unique email address, normalized to lowercase
     email: {
       type: String,
       required: true,
@@ -18,56 +16,46 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-    // Hashed password with minimum length requirement
     password: {
       type: String,
       required: true,
       minlength: 8,
     },
-    // User role for access control
     role: {
       type: String,
       enum: ['user', 'admin'],
       default: 'user',
     },
-    // Email verification status
     isVerified: {
       type: Boolean,
       default: false,
     },
-    // Secure random token sent to user's email for verification
     emailVerificationToken: {
       type: String,
       default: null,
     },
-    // Expiry date for the email verification token (24 hours from registration)
     emailVerificationExpires: {
       type: Date,
       default: null,
     },
-    // Hashed refresh token for session management
     refreshTokenHash: {
       type: String,
       default: null,
       select: false,
     },
-    // Refresh token expiration date
     refreshTokenExpiresAt: {
       type: Date,
       default: null,
     },
-    // Password reset token for password recovery
     resetPasswordToken: {
       type: String,
       default: null,
       select: false,
     },
-    // Password reset token expiration date
     resetPasswordExpires: {
       type: Date,
       default: null,
     },
-    // KYC verification status for compliance
     kycStatus: {
       type: String,
       enum: ['pending', 'approved', 'rejected'],
@@ -82,7 +70,6 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: null,
     },
-    // Stellar wallet address for blockchain integration
     walletAddress: {
       type: String,
       trim: true,
@@ -92,18 +79,36 @@ const userSchema = new mongoose.Schema(
     avatar: {
       type: String,
       trim: true,
+    // Soft delete field
+    deletedAt: {
+      type: Date,
       default: null,
     },
   },
   {
-    // Auto-generate createdAt and updatedAt timestamps
     timestamps: true,
   }
 );
 
-// Hash password before saving to database
+// Middleware to exclude soft-deleted users from all queries
+userSchema.pre('find', function () {
+  this.where({ deletedAt: null });
+});
+
+userSchema.pre('findOne', function () {
+  this.where({ deletedAt: null });
+});
+
+userSchema.pre('findOneAndUpdate', function () {
+  this.where({ deletedAt: null });
+});
+
+userSchema.pre('countDocuments', function () {
+  this.where({ deletedAt: null });
+});
+
+// Hash password before saving
 userSchema.pre('save', async function (next) {
-  // Skip if password hasn't been modified
   if (!this.isModified('password')) return next();
 
   try {
@@ -118,6 +123,18 @@ userSchema.pre('save', async function (next) {
 // Compare candidate password with stored hash
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
+};
+
+// Soft delete method
+userSchema.methods.softDelete = async function () {
+  this.deletedAt = new Date();
+  return this.save();
+};
+
+// Restore soft-deleted user
+userSchema.methods.restore = async function () {
+  this.deletedAt = null;
+  return this.save();
 };
 
 const User = mongoose.model('User', userSchema);
