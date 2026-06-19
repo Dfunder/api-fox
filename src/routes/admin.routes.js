@@ -3,8 +3,10 @@ const authenticate = require('../middlewares/auth');
 const isAdmin = require('../middlewares/isAdmin');
 const {
   deleteUser,
+  getUserById,
   restoreUser,
   listUsers,
+  updateUserRole,
 } = require('../controllers/admin.users.controller');
 
 const router = express.Router();
@@ -15,6 +17,12 @@ router.use(isAdmin);
 
 // GET /api/admin/users - List all users (optionally include deleted)
 router.get('/users', listUsers);
+
+// GET /api/admin/users/:id - Get a specific user profile
+router.get('/users/:id', getUserById);
+
+// PATCH /api/admin/users/:id/role - Update a user's role
+router.patch('/users/:id/role', updateUserRole);
 
 // DELETE /api/admin/users/:id - Soft delete a user
 router.delete('/users/:id', deleteUser);
