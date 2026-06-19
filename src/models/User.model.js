@@ -56,6 +56,11 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    status: {
+      type: String,
+      enum: ['active', 'suspended'],
+      default: 'active',
+    },
     kycStatus: {
       type: String,
       enum: ['pending', 'approved', 'rejected'],
@@ -84,10 +89,10 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-  },
-  {
     timestamps: true,
   }
+}
+
 );
 
 // Middleware to exclude soft-deleted users from all queries
