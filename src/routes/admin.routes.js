@@ -5,6 +5,7 @@ const {
   deleteUser,
   restoreUser,
   listUsers,
+  updateUserStatus,
 } = require('../controllers/admin.users.controller');
 
 const router = express.Router();
@@ -21,5 +22,8 @@ router.delete('/users/:id', deleteUser);
 
 // POST /api/admin/users/:id/restore - Restore a soft-deleted user
 router.post('/users/:id/restore', restoreUser);
+
+// PATCH /api/admin/users/:id/status - Suspend or activate a user
+router.patch('/users/:id/status', updateUserStatus);
 
 module.exports = router;
