@@ -79,6 +79,34 @@ const updateUserRole = async (req, res, next) => {
       updatedAt: updatedUser.updatedAt,
       deletedAt: updatedUser.deletedAt,
     }, 200, 'User role updated successfully');
+ * Suspend or activate a user account (admin only)
+ * @route PATCH /api/admin/users/:id/status
+ * @access Admin only
+ */
+const updateUserStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['active', 'suspended'].includes(status)) {
+      return sendError(res, 'Status must be "active" or "suspended"', 400);
+    }
+
+    if (id === req.userId) {
+      return sendError(res, 'You cannot change your own account status', 403);
+    }
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true, runValidators: true }
+    ).select('id email fullName status');
+
+    if (!user) {
+      return sendError(res, 'User not found', 404);
+    }
+
+    return sendSuccess(res, { id: user.id, email: user.email, fullName: user.fullName, status: user.status }, 200, `User account ${status} successfully`);
   } catch (error) {
     next(error);
   }
@@ -169,10 +197,53 @@ const listUsers = async (req, res, next) => {
   }
 };
 
+/**
+ * Update a user role (admin only)
+ * @route PATCH /api/admin/users/:id/role
+ * @access Admin only
+ */
+const updateUserRole = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    const validRoles = ['user', 'admin'];
+    if (!role || !validRoles.includes(role)) {
+      return sendError(res, 'Role must be either user or admin', 400);
+    }
+
+    if (req.userId === id && role === 'user') {
+      return sendError(res, 'You cannot downgrade your own role', 403);
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return sendError(res, 'User not found', 404);
+    }
+
+    user.role = role;
+    await user.save();
+
+    return sendSuccess(
+      res,
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+      200,
+      'User role updated successfully'
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   deleteUser,
   getUserById,
   restoreUser,
   listUsers,
+  updateUserStatus,
   updateUserRole,
 };
