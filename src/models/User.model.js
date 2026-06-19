@@ -89,10 +89,10 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-  },
-  {
     timestamps: true,
   }
+}
+
 );
 
 // Middleware to exclude soft-deleted users from all queries

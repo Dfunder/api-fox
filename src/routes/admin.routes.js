@@ -6,6 +6,7 @@ const {
   restoreUser,
   listUsers,
   updateUserStatus,
+  updateUserRole,
 } = require('../controllers/admin.users.controller');
 
 const router = express.Router();
@@ -25,5 +26,7 @@ router.post('/users/:id/restore', restoreUser);
 
 // PATCH /api/admin/users/:id/status - Suspend or activate a user
 router.patch('/users/:id/status', updateUserStatus);
+// PATCH /api/admin/users/:id/role - Update a user role
+router.patch('/users/:id/role', updateUserRole);
 
 module.exports = router;
