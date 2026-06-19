@@ -6,11 +6,11 @@ const { sendError } = require('../utils/response');
  */
 const isAdmin = (req, res, next) => {
   if (!req.user) {
-    return sendError(res, 401, 'Unauthorized');
+    return sendError(res, 'Unauthorized', 401);
   }
 
   if (req.user.role !== 'admin') {
-    return sendError(res, 403, 'Admin access required');
+    return sendError(res, 'Admin access required', 403);
   }
 
   next();

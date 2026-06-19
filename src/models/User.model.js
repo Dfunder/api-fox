@@ -84,6 +84,7 @@ const userSchema = new mongoose.Schema(
     avatar: {
       type: String,
       trim: true,
+    },
     // Soft delete field
     deletedAt: {
       type: Date,
