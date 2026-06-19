@@ -161,6 +161,14 @@ const login = async (req, res, next) => {
       return next(error);
     }
 
+    // Reject if user account is suspended
+    if (user.status === 'suspended') {
+      const error = new Error('Your account has been suspended. Please contact support.');
+      error.statusCode = 403;
+      error.isOperational = true;
+      return next(error);
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       const error = new Error('Invalid credentials');

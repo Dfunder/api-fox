@@ -2,6 +2,40 @@ const User = require('../models/User.model');
 const { sendSuccess, sendError } = require('../utils/response');
 
 /**
+ * Suspend or activate a user account (admin only)
+ * @route PATCH /api/admin/users/:id/status
+ * @access Admin only
+ */
+const updateUserStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['active', 'suspended'].includes(status)) {
+      return sendError(res, 'Status must be "active" or "suspended"', 400);
+    }
+
+    if (id === req.userId) {
+      return sendError(res, 'You cannot change your own account status', 403);
+    }
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true, runValidators: true }
+    ).select('id email fullName status');
+
+    if (!user) {
+      return sendError(res, 'User not found', 404);
+    }
+
+    return sendSuccess(res, { id: user.id, email: user.email, fullName: user.fullName, status: user.status }, 200, `User account ${status} successfully`);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Soft delete a user by ID (admin only)
  * @route DELETE /api/admin/users/:id
  * @access Admin only
@@ -132,5 +166,6 @@ module.exports = {
   deleteUser,
   restoreUser,
   listUsers,
+  updateUserStatus,
   updateUserRole,
 };
