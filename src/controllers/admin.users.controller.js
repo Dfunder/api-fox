@@ -79,6 +79,12 @@ const updateUserRole = async (req, res, next) => {
       updatedAt: updatedUser.updatedAt,
       deletedAt: updatedUser.deletedAt,
     }, 200, 'User role updated successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Suspend or activate a user account (admin only)
  * @route PATCH /api/admin/users/:id/status
  * @access Admin only
@@ -178,66 +184,62 @@ const restoreUser = async (req, res, next) => {
 };
 
 /**
- * List all users (including soft-deleted) (admin only)
+ * List all users (paginated)
  * @route GET /api/admin/users
  * @access Admin only
  */
 const listUsers = async (req, res, next) => {
   try {
-    const { includeDeleted } = req.query;
-    const query = includeDeleted === 'true' ? {} : { deletedAt: null };
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      role,
+      kycStatus,
+    } = req.query;
+
+    const query = { deletedAt: null };
+
+    if (search) {
+      query.$or = [
+        { fullName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    if (role) {
+      query.role = role;
+    }
+
+    if (kycStatus) {
+      query.kycStatus = kycStatus;
+    }
 
     const users = await User.find(query)
       .select('-password -refreshTokenHash -resetPasswordToken -emailVerificationToken')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
 
-    return sendSuccess(res, users, 200, 'Users retrieved successfully');
-  } catch (error) {
-    next(error);
-  }
-};
-
-/**
- * Update a user role (admin only)
- * @route PATCH /api/admin/users/:id/role
- * @access Admin only
- */
-const updateUserRole = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { role } = req.body;
-
-    const validRoles = ['user', 'admin'];
-    if (!role || !validRoles.includes(role)) {
-      return sendError(res, 'Role must be either user or admin', 400);
-    }
-
-    if (req.userId === id && role === 'user') {
-      return sendError(res, 'You cannot downgrade your own role', 403);
-    }
-
-    const user = await User.findById(id);
-    if (!user) {
-      return sendError(res, 'User not found', 404);
-    }
-
-    user.role = role;
-    await user.save();
+    const total = await User.countDocuments(query);
 
     return sendSuccess(
       res,
       {
-        id: user.id,
-        email: user.email,
-        role: user.role,
+        data: users,
+        total,
+        page: parseInt(page),
+        totalPages: Math.ceil(total / limit),
       },
       200,
-      'User role updated successfully'
+      'Users retrieved successfully'
     );
   } catch (error) {
     next(error);
   }
 };
+
+
 
 module.exports = {
   deleteUser,
