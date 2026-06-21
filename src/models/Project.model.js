@@ -18,6 +18,7 @@ const projectSchema = new mongoose.Schema(
     description: { type: String, trim: true },
     owner:       { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     documents:   { type: [documentSchema], default: [] },
+    status:      { type: String, enum: ['active', 'inactive'], default: 'active' },
     // ... add your other project fields here
   },
   { timestamps: true }
