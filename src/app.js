@@ -10,7 +10,7 @@ const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/users.routes');
 const protectedRoutes = require('./routes/protected.routes');
 const adminRoutes = require('./routes/admin.routes');
-
+const projectRoutes = require('./routes/project.routes');
 const app = express();
 
 const allowedOrigins =
@@ -27,7 +27,7 @@ app.use(
 // Serve static files from uploads directory
 app.use('/uploads', express.static('uploads'));
 app.use(helmet());
-
+app.use('/api/projects', projectRoutes);
 // rate limiting middleware
 app.use(globalLimiter);
 
@@ -47,7 +47,7 @@ app.use('/api/protected', protectedRoutes);
 
 // User routes (requires authentication)
 app.use('/api/users', userRoutes);
-
+app.use('/api/projects', projectRoutes);
 // Admin routes
 app.use('/api/admin', adminRoutes);
 
