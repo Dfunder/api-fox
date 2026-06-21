@@ -2,6 +2,42 @@ const Project = require('../models/Project.model');
 const { sendSuccess } = require('../utils/response');
 
 /**
+ * GET /api/projects/:id
+ * Retrieve campaign details for a single project.
+ */
+const getProjectDetails = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const project = await Project.findById(id).populate('owner', 'fullName');
+    if (!project) {
+      const error = new Error('Project not found');
+      error.statusCode = 404;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    const isActive = project.status !== 'inactive';
+    const isOwner = req.userId && project.owner && project.owner._id?.toString() === req.userId;
+    const isAdmin = req.user && req.user.role === 'admin';
+
+    if (!isActive && !isOwner && !isAdmin) {
+      const error = new Error('Project not found');
+      error.statusCode = 404;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    const projectData = project.toObject({ getters: true });
+    projectData.owner = project.owner ? { fullName: project.owner.fullName } : null;
+
+    return sendSuccess(res, projectData, 200, 'Project details retrieved successfully');
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
  * Upload supporting documents to a project
  * POST /api/projects/:id/documents
  */
@@ -69,4 +105,4 @@ const uploadDocuments = async (req, res, next) => {
   }
 };
 
-module.exports = { uploadDocuments };
+module.exports = { getProjectDetails, uploadDocuments };
