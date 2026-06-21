@@ -94,6 +94,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
 // Middleware to exclude soft-deleted users from all queries
 userSchema.pre('find', function () {
   this.where({ deletedAt: null });

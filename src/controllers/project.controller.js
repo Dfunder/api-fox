@@ -2,17 +2,14 @@ const Project = require('../models/Project.model');
 const { sendSuccess } = require('../utils/response');
 
 /**
- * Get a single project by id
  * GET /api/projects/:id
+ * Retrieve campaign details for a single project.
  */
-const getProjectById = async (req, res, next) => {
+const getProjectDetails = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const project = await Project.findById(id)
-      .populate('owner', 'fullName')
-      .exec();
-
+    const project = await Project.findById(id).populate('owner', 'fullName');
     if (!project) {
       const error = new Error('Project not found');
       error.statusCode = 404;
@@ -25,6 +22,11 @@ const getProjectById = async (req, res, next) => {
     const isAdmin = req.user?.role === 'admin';
 
     if (project.isActive === false && !isOwner && !isAdmin) {
+    const isActive = project.status !== 'inactive';
+    const isOwner = req.userId && project.owner && project.owner._id?.toString() === req.userId;
+    const isAdmin = req.user && req.user.role === 'admin';
+
+    if (!isActive && !isOwner && !isAdmin) {
       const error = new Error('Project not found');
       error.statusCode = 404;
       error.isOperational = true;
@@ -37,6 +39,10 @@ const getProjectById = async (req, res, next) => {
     }
 
     return sendSuccess(res, { project: responseProject }, 200, 'Project retrieved successfully');
+    const projectData = project.toObject({ getters: true });
+    projectData.owner = project.owner ? { fullName: project.owner.fullName } : null;
+
+    return sendSuccess(res, projectData, 200, 'Project details retrieved successfully');
   } catch (error) {
     return next(error);
   }
@@ -111,3 +117,4 @@ const uploadDocuments = async (req, res, next) => {
 };
 
 module.exports = { getProjectById, uploadDocuments };
+module.exports = { getProjectDetails, uploadDocuments };
