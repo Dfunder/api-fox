@@ -16,21 +16,11 @@ const projectSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
     description: { type: String, trim: true },
-    category: { type: String, trim: true },
-    goalAmount: { type: Number, required: true, min: 0 },
-    raisedAmount: { type: Number, default: 0, min: 0 },
-    currency: { type: String, default: 'XLM', trim: true },
-    owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    stellarAddress: { type: String, trim: true },
-    status: {
-      type: String,
-      enum: ['draft', 'pending', 'active', 'rejected', 'completed'],
-      default: 'draft',
-    },
-    coverImage: { type: String, trim: true },
-    documents: { type: [documentSchema], default: [] },
-    startDate: { type: Date },
-    endDate: { type: Date },
+    owner:       { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    isActive:    { type: Boolean, default: true },
+    documents:   { type: [documentSchema], default: [] },
+    status:      { type: String, enum: ['active', 'inactive'], default: 'active' },
+    // ... add your other project fields here
   },
   { timestamps: true }
 );
