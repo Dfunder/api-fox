@@ -56,4 +56,35 @@ const authenticate = async (req, res, next) => {
   }
 };
 
+const optionalAuthenticate = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return next();
+    }
+
+    const token = authHeader.substring(7);
+    if (!token) {
+      return next();
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.type !== 'access') {
+      return next();
+    }
+
+    const user = await User.findById(decoded.sub);
+    if (!user) {
+      return next();
+    }
+
+    req.user = user;
+    req.userId = user._id.toString();
+    next();
+  } catch (_error) {
+    next();
+  }
+};
+
 module.exports = authenticate;
+module.exports.optionalAuthenticate = optionalAuthenticate;

@@ -17,6 +17,11 @@ const getProjectDetails = async (req, res, next) => {
       return next(error);
     }
 
+    const ownerId = project.owner && project.owner._id ? project.owner._id.toString() : project.owner?.toString();
+    const isOwner = req.userId && ownerId === req.userId;
+    const isAdmin = req.user?.role === 'admin';
+
+    if (project.isActive === false && !isOwner && !isAdmin) {
     const isActive = project.status !== 'inactive';
     const isOwner = req.userId && project.owner && project.owner._id?.toString() === req.userId;
     const isAdmin = req.user && req.user.role === 'admin';
@@ -28,6 +33,12 @@ const getProjectDetails = async (req, res, next) => {
       return next(error);
     }
 
+    const responseProject = project.toObject();
+    if (responseProject.owner && responseProject.owner.fullName) {
+      responseProject.owner = { fullName: responseProject.owner.fullName };
+    }
+
+    return sendSuccess(res, { project: responseProject }, 200, 'Project retrieved successfully');
     const projectData = project.toObject({ getters: true });
     projectData.owner = project.owner ? { fullName: project.owner.fullName } : null;
 
@@ -105,4 +116,5 @@ const uploadDocuments = async (req, res, next) => {
   }
 };
 
+module.exports = { getProjectById, uploadDocuments };
 module.exports = { getProjectDetails, uploadDocuments };
