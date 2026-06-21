@@ -5,7 +5,12 @@ jest.mock('../models/Project.model', () => ({
   findById: jest.fn(),
 }));
 
+jest.mock('../models/User.model', () => ({
+  findById: jest.fn(),
+}));
+
 const Project = require('../models/Project.model');
+const User = require('../models/User.model');
 const app = require('../app');
 
 describe('GET /api/projects/:id', () => {
@@ -34,6 +39,15 @@ describe('GET /api/projects/:id', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    User.findById.mockImplementation((id) => {
+      if (id === ownerId) {
+        return Promise.resolve({ _id: ownerId, role: 'user' });
+      }
+      if (id === adminId) {
+        return Promise.resolve({ _id: adminId, role: 'admin' });
+      }
+      return Promise.resolve(null);
+    });
   });
 
   it('returns full project details for a valid active project id without auth', async () => {
