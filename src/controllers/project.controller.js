@@ -2,6 +2,34 @@ const Project = require('../models/Project.model');
 const { sendSuccess } = require('../utils/response');
 
 /**
+ * Create a new project/campaign
+ * POST /api/projects
+ */
+const createProject = async (req, res, next) => {
+  try {
+    if (req.user.kycStatus !== 'approved') {
+      const error = new Error('KYC approval is required to create a project');
+      error.statusCode = 403;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    const { title, description } = req.body;
+
+    const project = await Project.create({
+      title,
+      description,
+      owner: req.userId,
+      status: 'pending',
+    });
+
+    return sendSuccess(res, project, 201, 'Project created successfully');
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
  * Upload supporting documents to a project
  * POST /api/projects/:id/documents
  */
@@ -69,4 +97,4 @@ const uploadDocuments = async (req, res, next) => {
   }
 };
 
-module.exports = { uploadDocuments };
+module.exports = { createProject, uploadDocuments };

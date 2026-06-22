@@ -1,8 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middlewares/authenticate'); // your existing auth middleware
+const authenticate = require('../middlewares/auth');
 const { handleUpload } = require('../middlewares/upload.middleware');
-const { uploadDocuments } = require('../controllers/project.controller');
+const validate = require('../middlewares/validate');
+const { createProjectSchema } = require('../validators/project.validators');
+const { createProject, uploadDocuments } = require('../controllers/project.controller');
+
+/**
+ * POST /api/projects
+ * Create a project (KYC-approved users only)
+ */
+router.post('/', authenticate, validate(createProjectSchema), createProject);
 
 /**
  * POST /api/projects/:id/documents
