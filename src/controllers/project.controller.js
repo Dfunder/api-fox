@@ -10,10 +10,37 @@ const createProject = async (req, res, next) => {
     if (req.user.kycStatus !== 'approved') {
       const error = new Error('KYC approval is required to create a project');
       error.statusCode = 403;
+      
+ * GET /api/projects/:id
+ * Retrieve campaign details for a single project.
+ */
+const getProjectDetails = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const project = await Project.findById(id).populate('owner', 'fullName');
+    if (!project) {
+      const error = new Error('Project not found');
+      error.statusCode = 404;
       error.isOperational = true;
       return next(error);
     }
 
+    const ownerId = project.owner && project.owner._id ? project.owner._id.toString() : project.owner?.toString();
+    const isOwner = req.userId && ownerId === req.userId;
+    const isAdmin = req.user?.role === 'admin';
+
+    if (project.isActive === false && !isOwner && !isAdmin) {
+    const isActive = project.status !== 'inactive';
+    const isOwner = req.userId && project.owner && project.owner._id?.toString() === req.userId;
+    const isAdmin = req.user && req.user.role === 'admin';
+
+    if (!isActive && !isOwner && !isAdmin) {
+      const error = new Error('Project not found');
+      error.statusCode = 404;
+      error.isOperational = true;
+      return next(error);
+  
     const { title, description } = req.body;
 
     const project = await Project.create({
@@ -24,6 +51,17 @@ const createProject = async (req, res, next) => {
     });
 
     return sendSuccess(res, project, 201, 'Project created successfully');
+
+    const responseProject = project.toObject();
+    if (responseProject.owner && responseProject.owner.fullName) {
+      responseProject.owner = { fullName: responseProject.owner.fullName };
+    }
+
+    return sendSuccess(res, { project: responseProject }, 200, 'Project retrieved successfully');
+    const projectData = project.toObject({ getters: true });
+    projectData.owner = project.owner ? { fullName: project.owner.fullName } : null;
+
+    return sendSuccess(res, projectData, 200, 'Project details retrieved successfully');                                                                                     
   } catch (error) {
     return next(error);
   }
@@ -95,6 +133,7 @@ const uploadDocuments = async (req, res, next) => {
   } catch (error) {
     return next(error);
   }
-};
 
 module.exports = { createProject, uploadDocuments };
+module.exports = { getProjectById, uploadDocuments };
+module.exports = { getProjectDetails, uploadDocuments };

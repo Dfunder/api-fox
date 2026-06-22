@@ -1,16 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const authenticate = require('../middlewares/auth');
+const { optionalAuthenticate } = require('../middlewares/auth');
 const { handleUpload } = require('../middlewares/upload.middleware');
-const validate = require('../middlewares/validate');
-const { createProjectSchema } = require('../validators/project.validators');
-const { createProject, uploadDocuments } = require('../controllers/project.controller');
+const { getProjectById, uploadDocuments } = require('../controllers/project.controller');
 
 /**
- * POST /api/projects
- * Create a project (KYC-approved users only)
+ * GET /api/projects/:id
+ * Retrieve a single project by id
  */
-router.post('/', authenticate, validate(createProjectSchema), createProject);
+router.get('/:id', optionalAuthenticate, getProjectById);
+const authenticateOptional = require('../middlewares/auth.optional');
+const { handleUpload } = require('../middlewares/upload.middleware');
+const { uploadDocuments, getProjectDetails } = require('../controllers/project.controller');
+
+/**
+ * GET /api/projects/:id
+ * Retrieve campaign details for a single project.
+ */
+router.get('/:id', authenticateOptional, getProjectDetails);
 
 /**
  * POST /api/projects/:id/documents
