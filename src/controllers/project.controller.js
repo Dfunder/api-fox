@@ -2,6 +2,15 @@ const Project = require('../models/Project.model');
 const { sendSuccess } = require('../utils/response');
 
 /**
+ * Create a new project/campaign
+ * POST /api/projects
+ */
+const createProject = async (req, res, next) => {
+  try {
+    if (req.user.kycStatus !== 'approved') {
+      const error = new Error('KYC approval is required to create a project');
+      error.statusCode = 403;
+      
  * GET /api/projects/:id
  * Retrieve campaign details for a single project.
  */
@@ -31,7 +40,17 @@ const getProjectDetails = async (req, res, next) => {
       error.statusCode = 404;
       error.isOperational = true;
       return next(error);
-    }
+  
+    const { title, description } = req.body;
+
+    const project = await Project.create({
+      title,
+      description,
+      owner: req.userId,
+      status: 'pending',
+    });
+
+    return sendSuccess(res, project, 201, 'Project created successfully');
 
     const responseProject = project.toObject();
     if (responseProject.owner && responseProject.owner.fullName) {
@@ -42,7 +61,7 @@ const getProjectDetails = async (req, res, next) => {
     const projectData = project.toObject({ getters: true });
     projectData.owner = project.owner ? { fullName: project.owner.fullName } : null;
 
-    return sendSuccess(res, projectData, 200, 'Project details retrieved successfully');
+    return sendSuccess(res, projectData, 200, 'Project details retrieved successfully');                                                                                     
   } catch (error) {
     return next(error);
   }
@@ -114,7 +133,7 @@ const uploadDocuments = async (req, res, next) => {
   } catch (error) {
     return next(error);
   }
-};
 
+module.exports = { createProject, uploadDocuments };
 module.exports = { getProjectById, uploadDocuments };
 module.exports = { getProjectDetails, uploadDocuments };

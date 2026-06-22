@@ -1,6 +1,13 @@
 const User = require('../models/User.model');
 const { sendSuccess, sendError } = require('../utils/response');
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const parsePositiveInteger = (value, fallback) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+};
+
 /**
  * Get a specific user profile (admin only)
  * @route GET /api/admin/users/:id
@@ -191,19 +198,20 @@ const restoreUser = async (req, res, next) => {
 const listUsers = async (req, res, next) => {
   try {
     const {
-      page = 1,
-      limit = 10,
       search,
       role,
       kycStatus,
     } = req.query;
+    const page = parsePositiveInteger(req.query.page, 1);
+    const limit = parsePositiveInteger(req.query.limit, 10);
 
     const query = { deletedAt: null };
 
     if (search) {
+      const searchRegex = escapeRegExp(search.trim());
       query.$or = [
-        { fullName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
+        { fullName: { $regex: searchRegex, $options: 'i' } },
+        { email: { $regex: searchRegex, $options: 'i' } },
       ];
     }
 
@@ -219,7 +227,7 @@ const listUsers = async (req, res, next) => {
       .select('-password -refreshTokenHash -resetPasswordToken -emailVerificationToken')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(parseInt(limit));
+      .limit(limit);
 
     const total = await User.countDocuments(query);
 
@@ -228,7 +236,7 @@ const listUsers = async (req, res, next) => {
       {
         data: users,
         total,
-        page: parseInt(page),
+        page,
         totalPages: Math.ceil(total / limit),
       },
       200,
