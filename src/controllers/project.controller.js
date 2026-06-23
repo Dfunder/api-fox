@@ -54,7 +54,7 @@ const getProjectDetails = async (req, res, next) => {
     const ownerId = project.owner && project.owner._id ? project.owner._id.toString() : project.owner?.toString();
     const isOwner = req.userId && ownerId === req.userId;
     const isAdmin = req.user?.role === 'admin';
-    const isPublic = project.status === 'active' && project.isActive !== false;
+    const isPublic = project.status !== 'inactive' && project.isActive !== false;
 
     if (!isPublic && !isOwner && !isAdmin) {
       const error = new Error('Project not found');
@@ -66,7 +66,7 @@ const getProjectDetails = async (req, res, next) => {
     const projectData = project.toObject();
     projectData.owner = project.owner ? { fullName: project.owner.fullName } : null;
 
-    return sendSuccess(res, projectData, 200, 'Project retrieved successfully');
+    return sendSuccess(res, { project: projectData }, 200, 'Project retrieved successfully');
   } catch (error) {
     return next(error);
   }
