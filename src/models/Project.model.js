@@ -16,6 +16,7 @@ const projectSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
     description: { type: String, trim: true },
+    category: { type: String, trim: true, default: null },
     owner:       { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     isActive:    { type: Boolean, default: true },
     documents:   { type: [documentSchema], default: [] },

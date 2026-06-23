@@ -1,46 +1,25 @@
 const Project = require('../models/Project.model');
 const { sendSuccess } = require('../utils/response');
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const parsePositiveInteger = (value, fallback) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+};
+
 /**
  * Create a new project/campaign
  * POST /api/projects
  */
 const createProject = async (req, res, next) => {
   try {
-    if (req.user.kycStatus !== 'approved') {
+    if (req.user?.kycStatus !== 'approved') {
       const error = new Error('KYC approval is required to create a project');
       error.statusCode = 403;
-      
- * GET /api/projects/:id
- * Retrieve campaign details for a single project.
- */
-const getProjectDetails = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-
-    const project = await Project.findById(id).populate('owner', 'fullName');
-    if (!project) {
-      const error = new Error('Project not found');
-      error.statusCode = 404;
-      error.isOperational = true;
       return next(error);
     }
 
-    const ownerId = project.owner && project.owner._id ? project.owner._id.toString() : project.owner?.toString();
-    const isOwner = req.userId && ownerId === req.userId;
-    const isAdmin = req.user?.role === 'admin';
-
-    if (project.isActive === false && !isOwner && !isAdmin) {
-    const isActive = project.status !== 'inactive';
-    const isOwner = req.userId && project.owner && project.owner._id?.toString() === req.userId;
-    const isAdmin = req.user && req.user.role === 'admin';
-
-    if (!isActive && !isOwner && !isAdmin) {
-      const error = new Error('Project not found');
-      error.statusCode = 404;
-      error.isOperational = true;
-      return next(error);
-  
     const { title, description } = req.body;
 
     const project = await Project.create({
@@ -51,17 +30,97 @@ const getProjectDetails = async (req, res, next) => {
     });
 
     return sendSuccess(res, project, 201, 'Project created successfully');
+  } catch (error) {
+    return next(error);
+  }
+};
 
-    const responseProject = project.toObject();
-    if (responseProject.owner && responseProject.owner.fullName) {
-      responseProject.owner = { fullName: responseProject.owner.fullName };
+/**
+ * GET /api/projects/:id
+ * Retrieve campaign details for a single project.
+ */
+const getProjectDetails = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const project = await Project.findById(id).populate('owner', 'fullName').exec();
+    if (!project) {
+      const error = new Error('Project not found');
+      error.statusCode = 404;
+      error.isOperational = true;
+      return next(error);
     }
 
-    return sendSuccess(res, { project: responseProject }, 200, 'Project retrieved successfully');
-    const projectData = project.toObject({ getters: true });
+    const ownerId = project.owner && project.owner._id ? project.owner._id.toString() : project.owner?.toString();
+    const isOwner = req.userId && ownerId === req.userId;
+    const isAdmin = req.user?.role === 'admin';
+    const isPublic = project.status === 'active' && project.isActive !== false;
+
+    if (!isPublic && !isOwner && !isAdmin) {
+      const error = new Error('Project not found');
+      error.statusCode = 404;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    const projectData = project.toObject();
     projectData.owner = project.owner ? { fullName: project.owner.fullName } : null;
 
-    return sendSuccess(res, projectData, 200, 'Project details retrieved successfully');                                                                                     
+    return sendSuccess(res, projectData, 200, 'Project retrieved successfully');
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
+ * GET /api/projects
+ * List public active projects
+ */
+const listProjects = async (req, res, next) => {
+  try {
+    const page = parsePositiveInteger(req.query.page, 1);
+    const limit = parsePositiveInteger(req.query.limit, 10);
+    const { category, search } = req.query;
+
+    const query = {
+      status: 'active',
+      isActive: true,
+    };
+
+    if (category && category.trim()) {
+      query.category = category.trim();
+    }
+
+    if (search && search.trim()) {
+      const searchRegex = escapeRegExp(search.trim());
+      query.$or = [
+        { title: { $regex: searchRegex, $options: 'i' } },
+        { description: { $regex: searchRegex, $options: 'i' } },
+      ];
+    }
+
+    const projectsQuery = Project.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    const [projects, total] = await Promise.all([
+      projectsQuery.exec(),
+      Project.countDocuments(query),
+    ]);
+
+    return sendSuccess(
+      res,
+      {
+        data: projects,
+        total,
+        page,
+        limit,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+      200,
+      'Projects retrieved successfully'
+    );
   } catch (error) {
     return next(error);
   }
@@ -83,7 +142,6 @@ const uploadDocuments = async (req, res, next) => {
       return next(error);
     }
 
-    // Ownership check — req.userId is set by your authenticate middleware
     if (project.owner.toString() !== req.userId) {
       const error = new Error('Forbidden: you do not own this project');
       error.statusCode = 403;
@@ -98,7 +156,6 @@ const uploadDocuments = async (req, res, next) => {
       return next(error);
     }
 
-    // Enforce total document cap (existing + new ≤ 5)
     const MAX_TOTAL_DOCS = 5;
     if (project.documents.length + req.files.length > MAX_TOTAL_DOCS) {
       const slotsLeft = MAX_TOTAL_DOCS - project.documents.length;
@@ -112,13 +169,12 @@ const uploadDocuments = async (req, res, next) => {
     }
 
     const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
-
     const newDocs = req.files.map((file) => ({
       originalName: file.originalname,
-      filename:     file.filename,
-      mimetype:     file.mimetype,
-      size:         file.size,
-      url:          `${baseUrl}/uploads/documents/${file.filename}`,
+      filename: file.filename,
+      mimetype: file.mimetype,
+      size: file.size,
+      url: `${baseUrl}/uploads/documents/${file.filename}`,
     }));
 
     project.documents.push(...newDocs);
@@ -133,7 +189,11 @@ const uploadDocuments = async (req, res, next) => {
   } catch (error) {
     return next(error);
   }
+};
 
-module.exports = { createProject, uploadDocuments };
-module.exports = { getProjectById, uploadDocuments };
-module.exports = { getProjectDetails, uploadDocuments };
+module.exports = {
+  createProject,
+  getProjectDetails,
+  listProjects,
+  uploadDocuments,
+};
