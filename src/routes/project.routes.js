@@ -1,18 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const authenticate = require('../middlewares/auth');
-const { optionalAuthenticate } = require('../middlewares/auth');
-const { handleUpload } = require('../middlewares/upload.middleware');
-const { getProjectById, uploadDocuments } = require('../controllers/project.controller');
-
-/**
- * GET /api/projects/:id
- * Retrieve a single project by id
- */
-router.get('/:id', optionalAuthenticate, getProjectById);
 const authenticateOptional = require('../middlewares/auth.optional');
 const { handleUpload } = require('../middlewares/upload.middleware');
-const { uploadDocuments, getProjectDetails } = require('../controllers/project.controller');
+const {
+  getProjectDetails,
+  listProjects,
+  uploadDocuments,
+} = require('../controllers/project.controller');
+
+/**
+ * GET /api/projects
+ * List public active campaigns
+ */
+router.get('/', listProjects);
 
 /**
  * GET /api/projects/:id

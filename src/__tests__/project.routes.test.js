@@ -3,6 +3,8 @@ const request = require('supertest');
 
 jest.mock('../models/Project.model', () => ({
   findById: jest.fn(),
+  find: jest.fn(),
+  countDocuments: jest.fn(),
 }));
 
 jest.mock('../models/User.model', () => ({
@@ -142,5 +144,74 @@ describe('GET /api/projects/:id', () => {
 
     expect(response.body.success).toBe(true);
     expect(response.body.data.project.owner).toEqual({ fullName: 'Owner Name' });
+  });
+});
+
+describe('GET /api/projects', () => {
+  it('returns active public projects with pagination metadata', async () => {
+    const projectList = [
+      {
+        _id: '507f1f77bcf86cd799439066',
+        title: 'Campaign A',
+        description: 'Active campaign A',
+        status: 'active',
+        isActive: true,
+        createdAt: new Date('2026-06-22T12:00:00Z'),
+      },
+      {
+        _id: '507f1f77bcf86cd799439067',
+        title: 'Campaign B',
+        description: 'Active campaign B',
+        status: 'active',
+        isActive: true,
+        createdAt: new Date('2026-06-21T12:00:00Z'),
+      },
+    ];
+
+    const chain = {
+      sort: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      exec: jest.fn().mockResolvedValue(projectList),
+    };
+
+    Project.find.mockReturnValue(chain);
+    Project.countDocuments.mockResolvedValue(2);
+
+    const response = await request(app).get('/api/projects?page=1&limit=2').expect(200);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.data).toHaveLength(2);
+    expect(response.body.data.total).toBe(2);
+    expect(response.body.data.page).toBe(1);
+    expect(response.body.data.limit).toBe(2);
+    expect(response.body.data.totalPages).toBe(1);
+    expect(Project.find).toHaveBeenCalledWith({ status: 'active', isActive: true });
+  });
+
+  it('supports search and category filtering', async () => {
+    const chain = {
+      sort: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      exec: jest.fn().mockResolvedValue([]),
+    };
+
+    Project.find.mockReturnValue(chain);
+    Project.countDocuments.mockResolvedValue(0);
+
+    await request(app)
+      .get('/api/projects?search=water&category=Energy&page=2&limit=5')
+      .expect(200);
+
+    expect(Project.find).toHaveBeenCalledWith({
+      status: 'active',
+      isActive: true,
+      category: 'Energy',
+      $or: [
+        { title: { $regex: 'water', $options: 'i' } },
+        { description: { $regex: 'water', $options: 'i' } },
+      ],
+    });
   });
 });
