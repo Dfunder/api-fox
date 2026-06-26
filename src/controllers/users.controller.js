@@ -1,4 +1,5 @@
 const User = require('../models/User.model');
+const KYC = require('../models/KYC.model');
 const { sendSuccess } = require('../utils/response');
 const multer = require('multer');
 const path = require('path');
@@ -159,10 +160,61 @@ const uploadAvatar = async (req, res, next) => {
   }
 };
 
+/**
+ * Submit KYC documents
+ * @route POST /api/users/me/kyc
+ * @access Private (requires authentication)
+ */
+const submitKyc = async (req, res, next) => {
+  try {
+    // 1. Check if user already has a pending or approved KYC submission
+    if (req.user.kycStatus === 'pending' || req.user.kycStatus === 'approved') {
+      const error = new Error('KYC submission already exists or is already approved');
+      error.statusCode = 400;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    // 2. Ensure a file was uploaded
+    if (!req.file) {
+      const error = new Error('KYC document file is required');
+      error.statusCode = 400;
+      error.isOperational = true;
+      return next(error);
+    }
+
+    const { documentType } = req.body;
+
+    // 3. Create document URL/relative path
+    const documentUrl = `uploads/kyc/${req.file.filename}`;
+
+    // 4. Create the KYC record
+    const kyc = await KYC.create({
+      userId: req.userId,
+      documentType,
+      documentUrl,
+      status: 'pending',
+      submittedAt: new Date(),
+    });
+
+    // 5. Update the User's KYC status fields
+    req.user.kycStatus = 'pending';
+    req.user.kycSubmissionDate = kyc.submittedAt;
+    req.user.kycReviewNotes = null;
+    await req.user.save();
+
+    // 6. Return response
+    return sendSuccess(res, kyc, 201, 'KYC document submitted successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getCurrentUser,
   getCurrentUserKyc,
   updateCurrentUser,
   uploadAvatar,
+  submitKyc,
   upload // Export multer upload middleware
 };

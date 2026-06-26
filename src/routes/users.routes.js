@@ -5,10 +5,12 @@ const {
   getCurrentUserKyc,
   updateCurrentUser,
   uploadAvatar,
+  submitKyc,
   upload
 } = require('../controllers/users.controller');
-const { updateProfileSchema } = require('../validators/auth.validators');
+const { updateProfileSchema, kycSubmissionSchema } = require('../validators/auth.validators');
 const validate = require('../middlewares/validate');
+const { handleKycUpload } = require('../middlewares/kycUpload.middleware');
 
 const router = express.Router();
 
@@ -23,5 +25,8 @@ router.patch('/me', authenticate, validate(updateProfileSchema), updateCurrentUs
 
 // POST /api/users/me/avatar - Upload profile picture/avatar
 router.post('/me/avatar', authenticate, upload.single('avatar'), uploadAvatar);
+
+// POST /api/users/me/kyc - Submit KYC document
+router.post('/me/kyc', authenticate, handleKycUpload, validate(kycSubmissionSchema), submitKyc);
 
 module.exports = router;

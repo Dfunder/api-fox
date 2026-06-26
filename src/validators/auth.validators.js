@@ -79,6 +79,17 @@ const updateProfileSchema = Joi.object({
   'object.min': 'At least one field (fullName or walletAddress) must be provided',
 });
 
+const kycSubmissionSchema = Joi.object({
+  documentType: Joi.string()
+    .valid('passport', 'national_id', 'driving_license')
+    .required()
+    .messages({
+      'any.only': 'Document type must be one of: passport, national_id, driving_license',
+      'any.required': 'Document type is required',
+      'string.empty': 'Document type cannot be empty',
+    }),
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
@@ -87,4 +98,5 @@ module.exports = {
   refreshTokenSchema,
   changePasswordSchema,
   updateProfileSchema,
+  kycSubmissionSchema,
 };
